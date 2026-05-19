@@ -34,9 +34,7 @@ from app.schemas.slang_schema import SlangResponse
 load_dotenv()
 
 
-# The prompt now has {existing_words} — a placeholder that gets filled at runtime
-# with the list of words already generated on previous days.
-# This is what makes the system a true RAG: retrieved history augments the prompt.
+# Prompt template is safe to build at module level — no API key needed here.
 prompt = ChatPromptTemplate.from_template(
     "Generate 10 modern aesthetic English slang words.\n\n"
     "For each slang provide: word, meaning, bengali field in Banglish (romanized Bengali — e.g. 'Onek sundor' not 'অনেক সুন্দর'), tone, and an example sentence.\n\n"
@@ -44,16 +42,6 @@ prompt = ChatPromptTemplate.from_template(
     "{existing_words}\n\n"
     "Return ONLY new, fresh words that are not in the list above."
 )
-
-# temperature=0.8 — slightly creative so each run feels fresh
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite",
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
-    temperature=0.8,
-)
-
-# with_structured_output forces Gemini to return valid JSON matching SlangResponse
-chain = prompt | llm.with_structured_output(SlangResponse)
 
 
 def generate_slangs(previous_words: list[str]) -> list:
@@ -67,9 +55,16 @@ def generate_slangs(previous_words: list[str]) -> list:
     Returns:
         List[SlangWord] — 10 new, validated slang entries
     """
-    # Format the word list as a readable string for the prompt.
-    # If no history exists yet (first run), tell Gemini there are none.
-    context = ", ".join(previous_words[:100]) if previous_words else "None yet"
+    # Build the LLM and chain here, not at module level.
+    # On remote servers (Horizon), environment variables may not be available
+    # at import time — reading the key at call time guarantees it's populated.
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+        temperature=0.8,
+    )
+    chain = prompt | llm.with_structured_output(SlangResponse)
 
+    context = ", ".join(previous_words[:100]) if previous_words else "None yet"
     response = chain.invoke({"existing_words": context})
     return response.slangs
