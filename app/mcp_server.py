@@ -28,6 +28,16 @@
 #   }
 # ──────────────────────────────────────────────────────────────────────────────
 
+import sys
+import os
+from pathlib import Path
+
+# Ensure we always run from the project root so relative paths like
+# outputs/json/ resolve correctly, regardless of how this file is launched.
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
+
 from dotenv import load_dotenv
 
 # Load .env before any module that reads GOOGLE_API_KEY

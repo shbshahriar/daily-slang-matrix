@@ -1,5 +1,9 @@
 # Daily Slang Matrix
 
+[![GitHub](https://img.shields.io/badge/GitHub-shbshahriar%2Fdaily--slang--matrix-181717?logo=github)](https://github.com/shbshahriar/daily-slang-matrix)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-shbshahriar%2Fdaily--slang--matrix-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/shbshahriar/daily-slang-matrix)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+
 An autonomous daily slang generator powered by Google Gemini, LangGraph, and RAG. Every morning it generates 10 fresh modern English slang words with meanings, Banglish translations, tone labels, and example sentences — saves them as JSON and PDF, and exposes them through a CLI, REST API, and MCP tools for Claude Desktop.
 
 ---
@@ -100,12 +104,12 @@ Previously generated words are retrieved from `outputs/json/*.json` and injected
 
 - Python 3.13+
 - [uv](https://docs.astral.sh/uv/) installed
-- Google Gemini API key
+- Google Gemini API key — get one free at [aistudio.google.com](https://aistudio.google.com)
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-username/daily-slang-matrix.git
+git clone https://github.com/shbshahriar/daily-slang-matrix.git
 cd daily-slang-matrix
 uv sync
 ```
@@ -114,7 +118,7 @@ uv sync
 
 ```bash
 cp .env.example .env
-# Add your key:
+# Edit .env and add your key:
 # GOOGLE_API_KEY=your-key-here
 ```
 
@@ -128,10 +132,21 @@ uv run python -m app.main
 
 ## Docker
 
+### Pull from Docker Hub
+
+```bash
+docker pull shbshahriar/daily-slang-matrix
+```
+
+### Run with Docker Compose
+
 The full system runs in two containers — a cron scheduler and an HTTP API — both built from the same image.
 
 ```bash
-# Build and start both services
+# Start both services
+docker compose up -d
+
+# Or build from source
 docker compose up --build -d
 
 # Watch scheduler logs
@@ -241,7 +256,7 @@ daily-slang-matrix/
 ├── cron.sh                    Daily runner with logging
 ├── crontab                    Schedule: 0 8 * * *
 ├── pyproject.toml             Dependencies managed by uv
-└── .env                       GOOGLE_API_KEY (never committed)
+└── .env.example               Environment variable template
 ```
 
 ---
@@ -262,8 +277,6 @@ This means the LLM is called **at most once per day**, regardless of how many ti
 | Variable | Required | Description |
 |---|---|---|
 | `GOOGLE_API_KEY` | Yes | Google Gemini API key |
-
-Get a free key at [aistudio.google.com](https://aistudio.google.com).
 
 ---
 
