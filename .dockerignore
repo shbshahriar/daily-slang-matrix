@@ -1,0 +1,30 @@
+# Python environment — never ship the local venv
+.venv
+
+# Git history — not needed in image
+.git
+
+# Generated outputs and logs — mounted as volumes at runtime instead
+outputs/
+logs/
+
+# Byte-compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets — injected via --env-file at runtime, never baked into image
+.env
+
+# Editor / OS noise
+.vscode/
+.idea/
+*.DS_Store
+
+# Claude Code
+.claude/
+
+# Documentation — not needed at runtime
+PROJECT_REPORT.md
+README.md
+description.txt

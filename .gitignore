@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environment
+.venv
+
+# Secrets
+.env
+
+# Generated outputs
+outputs/
+logs/
+
+# Editor / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# uv
+.python-version
+
+# Claude Code
+.claude/
