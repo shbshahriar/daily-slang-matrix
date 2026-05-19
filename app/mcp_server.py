@@ -4,9 +4,9 @@
 #          and any MCP-compatible AI assistant can call them directly.
 #
 # THREE TOOLS:
-#   - get_daily_slangs    → today's 10 slangs, generates if not yet created
-#   - generate_daily_pdf  → creates today's PDF, returns the file path
-#   - get_previous_slangs → all words generated on previous days
+#   - get_daily_slangs    → generates 10 fresh slangs and returns them
+#   - generate_daily_pdf  → generates PDF, returns file path (local only)
+#   - get_previous_slangs → all words from past days (local only)
 #
 # IMPORTANT — WHY WE BYPASS THE LANGGRAPH GRAPH HERE:
 #   The graph's final node (display_slangs) writes Rich-formatted text to stdout.
@@ -14,18 +14,10 @@
 #   corrupt the MCP communication stream. So we call the underlying functions
 #   directly and never touch the display layer.
 #
-# HOW TO REGISTER WITH CLAUDE DESKTOP:
-#   Add to claude_desktop_config.json:
-#   {
-#     "mcpServers": {
-#       "daily-slang": {
-#         "command": "uv",
-#         "args": ["run", "python", "-m", "app.mcp_server"],
-#         "cwd": "/path/to/daily-slang-matrix",
-#         "env": { "GOOGLE_API_KEY": "your-key" }
-#       }
-#     }
-#   }
+# CLOUD NOTE:
+#   When running on a read-only filesystem (e.g. Prefect Horizon), file writes
+#   are skipped gracefully. get_daily_slangs() always generates fresh and returns
+#   directly without attempting to cache to disk.
 # ──────────────────────────────────────────────────────────────────────────────
 
 import sys
@@ -57,31 +49,39 @@ mcp = FastMCP("Daily Slang Matrix")
 def get_daily_slangs() -> list[dict]:
     """
     Returns today's 10 slang words with meaning, Banglish translation, tone, and example.
-    Generates them via Gemini if today's batch hasn't been created yet.
+    Generates fresh slangs via Gemini on every call.
     """
-    if not today_slangs_exist():
-        # Lazy import — slang_agent pulls in LangChain/Gemini; only load when needed
-        from app.agent.slang_agent import generate_slangs
-        previous = get_previous_words()
-        slangs = generate_slangs(previous)
-        save_daily_slangs(slangs)
+    # Lazy import — slang_agent pulls in LangChain/Gemini; only load when needed
+    from app.agent.slang_agent import generate_slangs
 
-    return [s.model_dump() for s in load_daily_slangs()]
+    previous = get_previous_words()
+    slangs = generate_slangs(previous)
+
+    # Try to cache to disk — silently skip if filesystem is read-only (e.g. Horizon)
+    try:
+        save_daily_slangs(slangs)
+    except OSError:
+        pass
+
+    return [s.model_dump() for s in slangs]
 
 
 @mcp.tool()
 def generate_daily_pdf() -> str:
     """
     Generates a PDF of today's slangs and returns the file path.
-    Triggers slang generation first if today's batch doesn't exist yet.
+    Only works in environments with a writable filesystem.
     """
-    if not today_slangs_exist():
-        from app.agent.slang_agent import generate_slangs
-        previous = get_previous_words()
-        slangs = generate_slangs(previous)
-        save_daily_slangs(slangs)
+    from app.agent.slang_agent import generate_slangs
 
-    slangs = load_daily_slangs()
+    previous = get_previous_words()
+    slangs = generate_slangs(previous)
+
+    try:
+        save_daily_slangs(slangs)
+    except OSError:
+        pass
+
     path = generate_pdf(slangs)
     return str(path)
 
