@@ -66,3 +66,9 @@ def get_history():
     # Sort so newest file appears last
     files = sorted(output_dir.glob("*.json"))
     return {"history": [file.name for file in files]}
+
+
+@router.get("/previous-words")
+def previous_words():
+    words = get_previous_words()
+    return {"words": words, "count": len(words)}
